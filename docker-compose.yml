@@ -1,0 +1,38 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: cidaderesolve
+      POSTGRES_PASSWORD: cidaderesolve
+      POSTGRES_DB: cidaderesolve
+    ports:
+      # Porta alta no host para não conflitar com outros PostgreSQL da máquina.
+      - "${DB_PORT:-5440}:5432"
+    volumes:
+      - dados_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cidaderesolve -d cidaderesolve"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://cidaderesolve:cidaderesolve@db:5432/cidaderesolve
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-de-desenvolvimento-local}
+      JWT_EXPIRA_MINUTOS: ${JWT_EXPIRA_MINUTOS:-60}
+      UPLOAD_DIR: uploads
+      GESTOR_EMAIL: ${GESTOR_EMAIL:-gestor@cidaderesolve.com}
+      GESTOR_SENHA: ${GESTOR_SENHA:-gestor12345}
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - fotos:/app/uploads
+
+volumes:
+  dados_postgres:
+  fotos:
