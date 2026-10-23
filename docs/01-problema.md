@@ -55,4 +55,4 @@ Por ser uma API, a solução pode ser consumida no futuro por um site, um aplica
 
 ## Fora do escopo deste protótipo
 
-Interface web ou aplicativo, integração com sistemas de prefeitura, notificações por e-mail ou push, teste de carga e armazenamento externo de fotos. Ver a seção de limitações no [README](../README.md).
+Aplicativo para celular, integração com sistemas de prefeitura, notificações por e-mail ou push e armazenamento externo de fotos. A interface web e o teste de carga, previstos inicialmente como melhorias futuras, foram incorporados ao projeto (ver [06-testes.md](06-testes.md)). Limitações e melhorias em [07-resultados-e-impacto.md](07-resultados-e-impacto.md).

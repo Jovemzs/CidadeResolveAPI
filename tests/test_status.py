@@ -180,3 +180,34 @@ def test_rejeitada_nao_preenche_resolvido_em(cliente, nova_ocorrencia, mudar_sta
 
     assert rejeitada["status"] == "REJEITADA"
     assert rejeitada["resolvido_em"] is None
+
+
+def test_mudancas_simultaneas_nao_duplicam_o_historico(nova_ocorrencia, gestor):
+    """Dois gestores movendo a mesma ocorrência ao mesmo tempo: só um deve conseguir."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    from app.core.excecoes import Conflito
+    from app.db.sessao import SessaoLocal
+    from app.models import HistoricoStatus, StatusOcorrencia
+    from app.schemas.ocorrencia import StatusEntrada
+    from app.services.armazenamento import ArmazenamentoFotosDisco
+    from app.services.ocorrencia import OcorrenciaServico
+
+    ocorrencia_id = nova_ocorrencia()["id"]
+
+    def mudar(_):
+        with SessaoLocal() as db:
+            servico = OcorrenciaServico(db, ArmazenamentoFotosDisco("uploads"))
+            try:
+                servico.mudar_status(ocorrencia_id, StatusEntrada(status=StatusOcorrencia.EM_ANALISE), db.merge(gestor))
+                return "ok"
+            except Conflito:
+                return "conflito"
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        resultados = list(executor.map(mudar, range(8)))
+
+    assert resultados.count("ok") == 1
+    assert resultados.count("conflito") == 7
+    with SessaoLocal() as db:
+        assert db.query(HistoricoStatus).filter_by(ocorrencia_id=ocorrencia_id).count() == 2

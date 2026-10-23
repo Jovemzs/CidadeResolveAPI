@@ -4,12 +4,13 @@ Este guia é para quem nunca usou FastAPI, Docker ou Postman. Basta seguir na or
 
 ## 1. O que é este projeto, em poucas palavras
 
-A CidadeResolve é um **backend**: um programa que fica rodando num servidor e responde a pedidos. Ainda não tem tela; a tela (front-end) é a próxima fase.
+A CidadeResolve tem duas partes: o **backend** (a API, um programa que fica rodando num servidor e responde a pedidos) e o **site** (as telas que as pessoas usam no navegador, que conversam com a API). Os dois sobem juntos, no mesmo endereço.
 
 Pense num restaurante:
 
 | Peça | No restaurante | No projeto |
 |---|---|---|
+| Site | O salão, onde o cliente faz o pedido | As telas no navegador: lista, mapa, formulários, painel |
 | Banco de dados (PostgreSQL) | A despensa, onde tudo fica guardado | Guarda usuários, ocorrências, fotos e histórico |
 | API (FastAPI) | O garçom, que recebe o pedido e traz a resposta | Recebe pedidos como "crie esta ocorrência" e responde |
 | Postman | Um cliente de teste que faz pedidos ao garçom | Programa para mandar pedidos à API e ver a resposta |
@@ -58,8 +59,27 @@ Confira no navegador:
 
 | Endereço | O que deve aparecer |
 |---|---|
+| http://localhost:8000 | O site do CidadeResolve |
 | http://localhost:8000/saude | `{"status":"ok"}` |
 | http://localhost:8000/docs | A página do Swagger, com a lista de todos os pedidos |
+
+### Colocar dados de exemplo (para apresentar)
+
+Com a API ligada, abra **outro** Prompt de Comando, entre na pasta do projeto e rode:
+
+```bash
+docker compose exec api python -m app.demo
+```
+
+Isso cria a cidadã **Maria Souza** (`maria.demo@cidaderesolve.com` / `demo12345`) e 7 ocorrências em bairros e situações diferentes. Rodar de novo não duplica nada.
+
+## 4.1. Usar o site
+
+Abra http://localhost:8000.
+
+- **Visitante** (sem login): vê a lista e o mapa, filtra por bairro, categoria e situação, e abre cada ocorrência para ver o andamento e o histórico.
+- **Cidadão**: clique em **Registrar ocorrência**, crie a conta ou entre, preencha o formulário, clique no mapa para marcar o local e escolha fotos. Em **Minhas** ficam as suas ocorrências. Enquanto estiver *Aberta*, você pode editar, excluir e trocar as fotos.
+- **Gestor** (`gestor@cidaderesolve.com` / `gestor12345`): na página de uma ocorrência aparece **Atualizar andamento**, com só as etapas permitidas. **Painel** mostra os indicadores e **Categorias** permite criar, editar, desativar e excluir.
 
 ## 5. Testar pelo navegador (Swagger)
 
@@ -124,7 +144,7 @@ As tabelas são `usuario`, `categoria`, `ocorrencia`, `foto` e `historico_status
 
 ## 8. Rodar os testes automáticos (opcional)
 
-São 110 testes que conferem todas as regras sozinhos. Precisa do Python 3.12 instalado.
+São 117 testes que conferem todas as regras sozinhos. Precisa do Python 3.12 instalado.
 
 ```bash
 docker compose up -d db
@@ -134,19 +154,27 @@ pip install -r requirements-dev.txt
 pytest
 ```
 
-O final deve mostrar `110 passed`.
+O final deve mostrar `117 passed`.
+
+Teste de performance, com a API ligada (simula 200 pessoas usando ao mesmo tempo por 90 segundos):
+
+```bash
+locust -f tests/performance/locustfile.py --host http://localhost:8000 --headless -u 200 -r 20 -t 90s --html docs/performance/relatorio.html
+```
+
+Abra o `relatorio.html` gerado no navegador para ver os gráficos. Os resultados já medidos estão em `docs/06-testes.md`.
 
 ## 9. Colocar na internet (Render)
 
 1. Crie uma conta gratuita em https://render.com, entrando com a conta do GitHub dona do repositório.
 2. Clique em **New** → **Blueprint** e escolha o repositório `CidadeResolveAPI`.
-3. O Render vai pedir três valores:
+3. O Render vai pedir dois valores:
    - `GESTOR_EMAIL`: o e-mail do gestor (por exemplo, `gestor@cidaderesolve.com`).
-   - `GESTOR_SENHA`: uma senha forte, que só o grupo saiba.
-   - `CORS_ORIGENS`: por enquanto, deixe `http://localhost:5173`. Quando o front-end estiver no ar, coloque o endereço dele aqui.
+   - `GESTOR_SENHA`: uma senha forte, que só você saiba.
 4. Clique em **Apply** e espere o deploy terminar (uns 5 a 10 minutos).
-5. Abra `https://NOME-DO-SERVICO.onrender.com/docs`.
+5. Abra `https://NOME-DO-SERVICO.onrender.com` (o site) e `https://NOME-DO-SERVICO.onrender.com/docs` (o Swagger).
 6. No Postman, escolha o ambiente **CidadeResolve - Render**, troque `base_url` pelo endereço do Render e rode o fluxo de demonstração de novo.
+7. (Opcional) Para ter os dados de exemplo no Render: no painel do serviço, abra **Shell** e rode `python -m app.demo`.
 
 Avisos do plano gratuito:
 
@@ -166,30 +194,29 @@ Avisos do plano gratuito:
 ## 11. O que entregar ao professor
 
 1. O link do repositório: https://github.com/Jovemzs/CidadeResolveAPI.
-2. O link público do Render (`.../docs`), depois do passo 9.
+2. O link público do Render (o site e o `/docs`), depois do passo 9.
 3. A coleção Postman (pasta `postman/`), com a demonstração rodando verde.
-4. Os documentos da pasta `docs/`: problema, requisitos, modelo de dados e cronograma.
-5. Prints sugeridos: Swagger aberto, Runner do Postman todo verde, tabelas no DBeaver e testes passando.
+4. Os documentos da pasta `docs/`, que cobrem os itens do enunciado:
 
-## 12. Informações que preciso de vocês
+| Item do enunciado | Documento |
+|---|---|
+| Problema real, dor do cliente, causas e efeitos | `01-problema.md` |
+| Requisitos | `02-requisitos.md` |
+| Modelagem do banco | `03-modelo-de-dados.md` |
+| Planejamento, cronograma e metodologia | `04-cronograma.md` |
+| Testes funcionais, manuais, de performance e de usabilidade | `06-testes.md` e `docs/performance/` |
+| Impacto, melhorias contínuas e feedback de usuários | `07-resultados-e-impacto.md` |
+| Clean Code, SOLID, Git, ambientes | `08-boas-praticas.md` |
+| Apresentação, vídeo e demonstração | `09-apresentacao.md` |
 
-Para fechar o backend e começar o front-end, respondam no chat (pode ser em tópicos, do jeito que der):
+5. Capturas de tela do site já prontas em `docs/telas/`. Prints sugeridos: o site (lista com mapa, detalhe, painel), o Swagger, o Runner do Postman todo verde, as tabelas no DBeaver, os testes passando e o relatório do Locust.
 
-**Sobre a entrega**
+## 12. O que falta fazer até a entrega
 
-1. O **enunciado do professor** (PDF, print ou texto). É o mais importante: confiro se não falta nenhum item obrigatório. Pode salvar na pasta `docs/` do projeto ou colar no chat.
-2. **Data de entrega e da apresentação**, e os **nomes dos integrantes**, para ajustar o cronograma (`docs/04-cronograma.md`).
-3. Se o professor exige **alguma tecnologia** específica no front-end (React, HTML puro etc.) ou se é livre.
+Só você pode fazer estes passos:
 
-**Sobre o deploy**
-
-4. Quem vai criar a conta no **Render**. Siga o passo 9 e me mande o link gerado, ou o erro que aparecer. Nunca mande senhas pelo chat.
-
-**Sobre o front-end (próxima fase)**
-
-5. Preferências visuais: cores, logo, algum site que vocês achem bonito como referência. Se não tiverem, eu proponho.
-6. Quais telas são indispensáveis. A sugestão inicial:
-   - Cidadão: cadastro e login, mapa ou lista de ocorrências com filtros, criar ocorrência com foto, "minhas ocorrências" com o andamento.
-   - Gestor: painel com as ocorrências para mudar o status, gestão de categorias e tela de indicadores com gráficos.
-
-O backend já está pronto para o front-end: ele aceita pedidos vindos de um site no navegador (configuração `CORS_ORIGENS`).
+1. **Publicar no Render** (passo 9). Se der erro, copie a mensagem do log do Render e mande no chat.
+2. **Aplicar o teste de usabilidade** com 3 a 5 pessoas (amigos, família), usando o roteiro e o questionário de `docs/06-testes.md`, seção 4. Preencha a tabela de resultados.
+3. **Preencher o registro de feedback** em `docs/07-resultados-e-impacto.md`, seção 5, com o que as pessoas disseram.
+4. **Montar os slides e gravar o vídeo** seguindo `docs/09-apresentacao.md`.
+5. **Ensaiar a demonstração** pelo menos uma vez, com o checklist do mesmo documento.

@@ -1,8 +1,8 @@
-# CidadeResolve API
+# CidadeResolve
 
 > Nunca usou FastAPI, Docker ou Postman? Comece pelo [guia passo a passo](docs/05-guia-passo-a-passo.md).
 
-Web Service REST para registrar e acompanhar problemas urbanos (buracos, iluminação pública, descarte irregular de lixo) e consultar indicadores de atendimento.
+Web Service REST, com site próprio, para registrar e acompanhar problemas urbanos (buracos, iluminação pública, descarte irregular de lixo) e consultar indicadores de atendimento.
 
 Protótipo acadêmico do Projeto Integrador Web Services. Não há integração oficial com nenhuma prefeitura.
 
@@ -15,7 +15,9 @@ Protótipo acadêmico do Projeto Integrador Web Services. Não há integração 
 - Consulta pública com filtros por bairro, categoria e status.
 - Indicadores para o gestor: totais, taxa de resolução e tempo médio de resolução.
 
-Stack: Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2, PostgreSQL 16, JWT, pytest e Docker.
+O site, servido pela própria API, traz lista de ocorrências com mapa e filtros, registro com ponto no mapa e fotos, acompanhamento do andamento e, para o gestor, mudança de status, categorias e painel de indicadores.
+
+Stack: Python 3.12, FastAPI, SQLAlchemy 2, Alembic, Pydantic 2, PostgreSQL 16, JWT, pytest, Locust e Docker. Site em HTML, CSS e JavaScript, com mapa Leaflet e OpenStreetMap.
 
 ## Rodar localmente
 
@@ -29,12 +31,21 @@ O comando sobe o PostgreSQL e a API, aplica as migrações e executa a carga ini
 
 | O quê | Onde |
 |---|---|
+| Site | http://localhost:8000 |
 | Swagger | http://localhost:8000/docs |
 | API | http://localhost:8000/api/v1 |
 | Verificação | http://localhost:8000/saude |
 | PostgreSQL (acesso pelo host) | `localhost:5440`, usuário, senha e banco `cidaderesolve` |
 
 Gestor da carga inicial: `gestor@cidaderesolve.com` / `gestor12345`.
+
+Para ter dados de exemplo (uma cidadã e 7 ocorrências em situações diferentes), com a API ligada:
+
+```bash
+docker compose exec api python -m app.demo
+```
+
+Cidadã de exemplo: `maria.demo@cidaderesolve.com` / `demo12345`.
 
 Para mudar segredo, credenciais do gestor ou portas, copie `.env.example` para `.env` e ajuste. O compose também aceita `API_PORT` e `DB_PORT` se as portas 8000 ou 5440 estiverem ocupadas.
 
@@ -69,6 +80,14 @@ pytest
 ```
 
 Para usar outro servidor PostgreSQL, defina `TEST_DATABASE_URL`.
+
+Teste de performance (com a API ligada), simulando 200 usuários por 90 segundos:
+
+```bash
+locust -f tests/performance/locustfile.py --host http://localhost:8000 --headless -u 200 -r 20 -t 90s --html docs/performance/relatorio.html
+```
+
+Resultados e análise em [docs/06-testes.md](docs/06-testes.md).
 
 ## Postman
 
@@ -142,7 +161,7 @@ Erros seguem um formato único:
 | `JWT_EXPIRA_MINUTOS` | Validade do token | 60 |
 | `UPLOAD_DIR` | Pasta das fotos | `uploads` |
 | `GESTOR_EMAIL`, `GESTOR_SENHA` | Credenciais do gestor da carga inicial | sem gestor se ausentes |
-| `CORS_ORIGENS` | Endereços do front-end autorizados a chamar a API, separados por vírgula | `http://localhost:5173,http://localhost:3000` |
+| `CORS_ORIGENS` | Outros endereços autorizados a chamar a API pelo navegador, separados por vírgula. O site da própria API não precisa disso | `http://localhost:5173,http://localhost:3000` |
 
 ## Estrutura
 
@@ -157,8 +176,10 @@ app/
   services/        regras de negócio (permissões, status, fotos, indicadores)
   routers/         HTTP, sem regra de negócio
   seed.py          carga inicial
+  demo.py          dados de demonstração
+frontend/          site (HTML, CSS e JavaScript), servido na raiz
 alembic/           migrações
-tests/             testes automatizados
+tests/             testes automatizados (performance/ com o teste de carga)
 docs/              documentação do projeto
 postman/           coleção e ambientes
 ```
@@ -173,15 +194,14 @@ O repositório traz um `render.yaml` que descreve o serviço web (Docker) e o Po
 2. No Render, escolha **New > Blueprint** e selecione o repositório.
 3. Informe `GESTOR_EMAIL` e `GESTOR_SENHA` quando solicitado. `DATABASE_URL` e `JWT_SECRET` são preenchidos sozinhos.
 4. Aguarde o deploy. A cada início, o contêiner aplica as migrações e a carga inicial.
-5. Acesse `https://SEU-SERVICO.onrender.com/docs` e atualize `base_url` no ambiente **CidadeResolve - Render** do Postman.
+5. Acesse `https://SEU-SERVICO.onrender.com` (site) e `/docs` (Swagger), e atualize `base_url` no ambiente **CidadeResolve - Render** do Postman.
 
 Sem o Blueprint: crie um PostgreSQL e um Web Service com runtime Docker, e configure as variáveis da tabela acima no painel.
 
 ## Limitações
 
 - **Fotos em produção.** O disco do plano gratuito do Render é apagado a cada deploy ou reinício, então as fotos enviadas no ambiente público se perdem. No Docker local elas persistem em volume. Melhoria futura: outra implementação de `ArmazenamentoFotos` usando armazenamento de objetos (S3, Cloudinary).
-- **Sem teste de carga.** Melhoria futura: script com Locust ou k6.
-- Sem notificações ao cidadão, sem detecção de ocorrências duplicadas e sem interface web ou aplicativo.
+- Sem notificações ao cidadão e sem detecção de ocorrências duplicadas. Lista completa de limitações e melhorias em [docs/07-resultados-e-impacto.md](docs/07-resultados-e-impacto.md).
 
 ## Documentação do projeto
 
@@ -190,4 +210,8 @@ Sem o Blueprint: crie um PostgreSQL e um Web Service com runtime Docker, e confi
 - [Modelo de dados](docs/03-modelo-de-dados.md)
 - [Cronograma](docs/04-cronograma.md)
 - [Guia passo a passo para iniciantes](docs/05-guia-passo-a-passo.md)
+- [Testes (funcionais, performance e usabilidade)](docs/06-testes.md)
+- [Resultados, impacto e melhorias](docs/07-resultados-e-impacto.md)
+- [Boas práticas (camadas, SOLID, segurança, Git)](docs/08-boas-praticas.md)
+- [Roteiro de apresentação e vídeo](docs/09-apresentacao.md)
 - [Especificação de design](docs/superpowers/specs/2026-10-13-cidaderesolve-api-design.md)

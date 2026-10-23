@@ -61,6 +61,13 @@ Papéis: **público** (sem login), **cidadão** e **gestor**.
 | RF26 | O gestor pode consultar: total de ocorrências, quantidade por status, por categoria e por bairro, taxa de resolução e tempo médio de resolução em horas. |
 | RF27 | Os indicadores podem ser filtrados por período (data de criação). |
 
+### Interface web
+
+| Id | Requisito |
+|---|---|
+| RF28 | O sistema deve oferecer um site, servido pela própria API, com lista de ocorrências filtrável e mapa, detalhe com andamento e histórico, registro com ponto no mapa e fotos, e área do cidadão com as próprias ocorrências. |
+| RF29 | O site deve oferecer ao gestor a mudança de status, a gestão de categorias e um painel com os indicadores. |
+
 ## Requisitos não funcionais
 
 | Id | Categoria | Requisito |
@@ -77,6 +84,9 @@ Papéis: **público** (sem login), **cidadão** e **gestor**.
 | RNF10 | Implantação | A mesma imagem Docker é publicada em serviço gratuito (Render) com PostgreSQL gerenciado. |
 | RNF11 | Configuração | Toda configuração sensível vem de variáveis de ambiente; nenhum segredo fica no repositório. |
 | RNF12 | Manutenibilidade | O armazenamento de fotos fica atrás de uma interface, permitindo trocar o disco por um serviço externo sem alterar as regras de negócio. |
+| RNF13 | Desempenho | Com 200 usuários simultâneos, 95% das respostas em menos de 200 ms (medido: 83 ms; ver [06-testes.md](06-testes.md)). |
+| RNF14 | Integridade | Mudanças de status simultâneas na mesma ocorrência são serializadas; só a primeira é aceita. |
+| RNF15 | Usabilidade e acessibilidade | Site responsivo (celular e computador), navegável por teclado, com mensagens de erro em português junto do campo com problema. |
 
 ## Regras de permissão
 
