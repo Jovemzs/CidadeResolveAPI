@@ -26,7 +26,7 @@ def executar_carga(db: Session) -> None:
         if usuarios.obter_por_email(email) is None:
             usuarios.adicionar(
                 Usuario(
-                    nome="Gestor",
+                    nome="Equipe de atendimento",
                     email=email,
                     senha_hash=gerar_hash_senha(config.gestor_senha),
                     papel=Papel.GESTOR,

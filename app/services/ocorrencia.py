@@ -108,7 +108,9 @@ class OcorrenciaServico:
 
     def mudar_status(self, ocorrencia_id: int, dados: StatusEntrada, usuario: Usuario) -> Ocorrencia:
         exigir_gestor(usuario)
+        self.ocorrencias.travar(ocorrencia_id)
         ocorrencia = self.obter(ocorrencia_id)
+        self.db.refresh(ocorrencia)
         atual, novo = ocorrencia.status, dados.status
         if novo not in TRANSICOES[atual]:
             raise Conflito(

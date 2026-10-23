@@ -22,6 +22,10 @@ class OcorrenciaRepositorio:
         )
         return self.db.scalar(consulta)
 
+    def travar(self, ocorrencia_id: int) -> None:
+        """Trava a linha até o fim da transação, para mudanças simultâneas esperarem a vez."""
+        self.db.execute(select(Ocorrencia.id).where(Ocorrencia.id == ocorrencia_id).with_for_update())
+
     def listar(
         self,
         *,

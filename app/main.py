@@ -32,6 +32,43 @@ STATUS_POR_ERRO: dict[type[ErroNegocio], int] = {
 
 CODIGO_POR_STATUS = {401: "NAO_AUTENTICADO", 403: "SEM_PERMISSAO", 404: "NAO_ENCONTRADO"}
 
+DIRETORIO_FRONTEND = Path(__file__).resolve().parent.parent / "frontend"
+
+MENSAGENS_VALIDACAO = {
+    "missing": "Campo obrigatório.",
+    "string_too_short": "Deve ter pelo menos {min_length} caractere(s).",
+    "string_too_long": "Deve ter no máximo {max_length} caracteres.",
+    "greater_than_equal": "Deve ser maior ou igual a {ge}.",
+    "less_than_equal": "Deve ser menor ou igual a {le}.",
+    "int_parsing": "Informe um número inteiro.",
+    "int_type": "Informe um número inteiro.",
+    "float_parsing": "Informe um número.",
+    "float_type": "Informe um número.",
+    "string_type": "Informe um texto.",
+    "bool_parsing": "Informe verdadeiro ou falso.",
+    "enum": "Valor inválido. Opções: {expected}.",
+    "date_parsing": "Informe uma data no formato AAAA-MM-DD.",
+    "date_from_datetime_parsing": "Informe uma data no formato AAAA-MM-DD.",
+    "json_invalid": "O corpo da requisição não é um JSON válido.",
+}
+
+
+def traduzir_erro_validacao(item: dict) -> str:
+    tipo, contexto = item["type"], item.get("ctx") or {}
+    if item.get("input", "") is None and tipo.endswith("_type"):
+        return "Campo obrigatório."
+    if tipo == "value_error":
+        if "email" in item["msg"]:
+            return "Informe um e-mail válido."
+        return str(contexto.get("error", item["msg"]))
+    modelo = MENSAGENS_VALIDACAO.get(tipo)
+    if modelo is None:
+        return item["msg"]
+    try:
+        return modelo.format(**contexto)
+    except (KeyError, IndexError):
+        return item["msg"]
+
 
 def resposta_erro(status: int, codigo: str, mensagem: str, **extras) -> JSONResponse:
     return JSONResponse(
@@ -55,7 +92,7 @@ def registrar_handlers(app: FastAPI) -> None:
         detalhes = [
             {
                 "campo": ".".join(str(parte) for parte in item["loc"] if parte != "body"),
-                "mensagem": item["msg"],
+                "mensagem": traduzir_erro_validacao(item),
             }
             for item in erro.errors()
         ]
@@ -94,6 +131,10 @@ def criar_aplicacao() -> FastAPI:
     diretorio_uploads = Path(obter_configuracoes().upload_dir)
     diretorio_uploads.mkdir(parents=True, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=diretorio_uploads), name="uploads")
+
+    # O site (front-end) é servido na raiz. Fica por último para não encobrir as rotas acima.
+    if DIRETORIO_FRONTEND.is_dir():
+        app.mount("/", StaticFiles(directory=DIRETORIO_FRONTEND, html=True), name="site")
 
     return app
 
