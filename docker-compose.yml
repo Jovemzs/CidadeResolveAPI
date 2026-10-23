@@ -28,6 +28,7 @@ services:
       UPLOAD_DIR: uploads
       GESTOR_EMAIL: ${GESTOR_EMAIL:-gestor@cidaderesolve.com}
       GESTOR_SENHA: ${GESTOR_SENHA:-gestor12345}
+      CORS_ORIGENS: ${CORS_ORIGENS:-http://localhost:5173,http://localhost:3000}
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:

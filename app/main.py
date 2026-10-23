@@ -2,6 +2,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -76,6 +77,12 @@ def criar_aplicacao() -> FastAPI:
         version="1.0.0",
     )
     registrar_handlers(app)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=obter_configuracoes().lista_cors_origens,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     for modulo in (auth, categorias, ocorrencias, fotos, indicadores):
         app.include_router(modulo.router, prefix=PREFIXO)

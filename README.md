@@ -1,5 +1,7 @@
 # CidadeResolve API
 
+> Nunca usou FastAPI, Docker ou Postman? Comece pelo [guia passo a passo](docs/05-guia-passo-a-passo.md).
+
 Web Service REST para registrar e acompanhar problemas urbanos (buracos, iluminação pública, descarte irregular de lixo) e consultar indicadores de atendimento.
 
 Protótipo acadêmico do Projeto Integrador Web Services. Não há integração oficial com nenhuma prefeitura.
@@ -140,6 +142,7 @@ Erros seguem um formato único:
 | `JWT_EXPIRA_MINUTOS` | Validade do token | 60 |
 | `UPLOAD_DIR` | Pasta das fotos | `uploads` |
 | `GESTOR_EMAIL`, `GESTOR_SENHA` | Credenciais do gestor da carga inicial | sem gestor se ausentes |
+| `CORS_ORIGENS` | Endereços do front-end autorizados a chamar a API, separados por vírgula | `http://localhost:5173,http://localhost:3000` |
 
 ## Estrutura
 
@@ -186,4 +189,5 @@ Sem o Blueprint: crie um PostgreSQL e um Web Service com runtime Docker, e confi
 - [Requisitos](docs/02-requisitos.md)
 - [Modelo de dados](docs/03-modelo-de-dados.md)
 - [Cronograma](docs/04-cronograma.md)
+- [Guia passo a passo para iniciantes](docs/05-guia-passo-a-passo.md)
 - [Especificação de design](docs/superpowers/specs/2026-10-13-cidaderesolve-api-design.md)

@@ -27,3 +27,5 @@ services:
         sync: false
       - key: GESTOR_SENHA
         sync: false
+      - key: CORS_ORIGENS
+        sync: false

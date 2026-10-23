@@ -91,3 +91,19 @@ def test_rota_inexistente_usa_formato_unico_de_erro(cliente):
 
     assert resposta.status_code == 404
     assert set(resposta.json()["erro"]) == {"codigo", "mensagem"}
+
+
+def test_cors_libera_o_front_end_local(cliente):
+    resposta = cliente.options(
+        "/api/v1/ocorrencias",
+        headers={"Origin": "http://localhost:5173", "Access-Control-Request-Method": "POST"},
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.headers["access-control-allow-origin"] == "http://localhost:5173"
+
+
+def test_cors_bloqueia_origem_desconhecida(cliente):
+    resposta = cliente.get("/api/v1/categorias", headers={"Origin": "https://site-qualquer.com"})
+
+    assert "access-control-allow-origin" not in resposta.headers
